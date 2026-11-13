@@ -17,7 +17,7 @@ import (
 
 // releasesURL is the formal download entry, offered when an installation
 // cannot update itself.
-const releasesURL = "https://github.com/Licoy/Quosparr/releases/latest"
+const releasesURL = "https://github.com/Alice-Marx/Quosparr-allAI/releases/latest"
 
 // UpdateInterval is the time between background update checks while the
 // app runs; mygo runs the first one of a launch shortly after it starts.

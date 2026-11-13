@@ -123,8 +123,8 @@ func appIconBitmap() *ui.Bitmap {
 
 const (
 	websiteURL  = "https://quosparr.com"
-	githubURL   = "https://github.com/Licoy/Quosparr"
-	feedbackURL = "https://github.com/Licoy/Quosparr/issues/new"
+	githubURL   = "https://github.com/Alice-Marx/Quosparr-allAI"
+	feedbackURL = "https://github.com/Alice-Marx/Quosparr-allAI/issues/new"
 
 	// loginItemsSettingsURL opens System Settings > General > Login Items
 	// (macOS 13+), where a login item waiting for approval is allowed.
@@ -707,7 +707,7 @@ func (u *settingsUI) aboutPage(c *ui.Context) {
 				c.OpenURL(websiteURL)
 			}
 		})
-		row("GitHub", "github.com/Licoy/Quosparr", func() {
+		row("GitHub", "github.com/Alice-Marx/Quosparr-allAI", func() {
 			if PillButton(c, nil, l.Text(l10n.KeyOpenGithub), false).Clicked() {
 				c.OpenURL(githubURL)
 			}
