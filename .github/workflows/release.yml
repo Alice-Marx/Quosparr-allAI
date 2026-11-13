@@ -58,6 +58,11 @@ jobs:
           SPARKLE_PUBLIC_KEY: ${{ secrets.SPARKLE_PUBLIC_KEY }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
           MYGO_UPDATE_PRIVATE_KEY: ${{ secrets.MYGO_UPDATE_PRIVATE_KEY }}
+          MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
           python3 - <<'PY'
           import json, os, re
@@ -73,7 +78,9 @@ jobs:
               channel = 'beta'
           else:
               raise SystemExit('release tag must match the stable or beta version in mygo.json')
-          for key in ('SPARKLE_PUBLIC_KEY', 'SPARKLE_PRIVATE_KEY', 'MYGO_UPDATE_PRIVATE_KEY'):
+          for key in ('SPARKLE_PUBLIC_KEY', 'SPARKLE_PRIVATE_KEY', 'MYGO_UPDATE_PRIVATE_KEY',
+                      'MACOS_CERTIFICATE_P12', 'MACOS_CERTIFICATE_PASSWORD',
+                      'APPLE_API_KEY_P8', 'APPLE_API_KEY_ID', 'APPLE_API_ISSUER_ID'):
               if not os.environ.get(key, '').strip():
                   raise SystemExit('Missing ' + key + ' secret')
           if os.environ['SPARKLE_PUBLIC_KEY'].strip() != config['macos']['infoPlist']['SUPublicEDKey']:
@@ -142,15 +149,25 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      # Same runner and builds as CI's go-package-macos, whose cache for this
+      # commit already exists by the time ci-gate passes
+      - uses: ./.github/actions/setup-go
         with:
-          go-version-file: go.mod
-      - name: Package final apps and Sparkle feeds
+          cache-job: go-package-macos
+      - name: Import Developer ID certificate and notary API key
+        env:
+          MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: bash Scripts/import-macos-signing.sh >> "$GITHUB_ENV"
+      - name: Package, sign and notarize final apps and Sparkle feeds
         env:
           V1_UPDATE_CHANNEL: ${{ needs.v1-preflight.outputs.channel }}
           SPARKLE_PUBLIC_KEY: ${{ secrets.SPARKLE_PUBLIC_KEY }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
           MYGO_UPDATE_PRIVATE_KEY: ${{ secrets.MYGO_UPDATE_PRIVATE_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
           # Keep one macos-26 runner: concurrent hosted runners previously failed acquisition
           mkdir -p dist-v1
@@ -179,9 +196,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      # windows-latest and ubuntu-latest are also go-native-tests runners
+      - uses: ./.github/actions/setup-go
         with:
-          go-version-file: go.mod
+          cache-job: go-native-tests
       - uses: actions/setup-python@v6
         if: runner.os == 'Windows'
         with:
@@ -189,9 +207,13 @@ jobs:
       # Windows installers use the NSIS 3.13 zip that mygo build downloads
       # and checks. Do not preinstall it with Chocolatey: its community
       # feed returns 503 often enough to fail the job before packaging.
-      - name: Install Linux desktop dependencies
+      # Runtime packages only, as in CI: mygo loads GTK by versioned soname
+      - name: Install Linux desktop runtime dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libayatana-appindicator3-dev fonts-noto-cjk
+        timeout-minutes: 5
+        run: |
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install -y libgtk-3-0t64 libayatana-appindicator3-1 fonts-noto-cjk
       - name: Package both architectures
         shell: bash
         env:
@@ -211,9 +233,12 @@ jobs:
             stage="$V1_BUILD_DIR/$PLATFORM-$arch"
             cp "$stage"/*.tar.gz "$stage"/update-*.json dist-v1/
             if [[ "$PLATFORM" == windows ]]; then
-              for installer in "$stage"/*Setup*.exe; do
-                name="${installer##*/}"
-                cp "$installer" "dist-v1/${name// /.}"
+              # Publish mygo's quosparr-setup-<version>-<arch>.exe under the
+              # established Quosparr.Setup.<version>.<arch>.exe asset name
+              for installer in "$stage"/quosparr-setup-*-"$arch".exe; do
+                version="${installer##*/quosparr-setup-}"
+                version="${version%-"$arch".exe}"
+                cp "$installer" "dist-v1/Quosparr.Setup.$version.$arch.exe"
               done
             else
               cp "$stage"/*.deb dist-v1/

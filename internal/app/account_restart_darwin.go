@@ -12,6 +12,7 @@ import (
 
 const codexRestartSupported = true
 const codexRestartDefault = true
+const codexDesktopShareSupported = true
 
 func accountOnMain(fn func()) {
 	done := make(chan struct{})
@@ -22,14 +23,23 @@ func accountOnMain(fn func()) {
 func prepareCodexDesktopRestart() (func() error, error) {
 	apps := runningApplications(isCodexDesktop)
 	fallback := findCodexApplication()
-	if len(apps) == 0 && fallback == "" {
+	if len(apps) == 0 {
 		return nil, nil
 	}
-	return prepareCodexRestart(apps, fallback, openCodexApplication)
+	return prepareCodexRestart(apps, fallback, codexDesktopRunning, openCodexApplication)
+}
+
+// codexDesktopRunning tells whether the desktop app is open.
+func codexDesktopRunning() bool {
+	apps := runningApplications(isCodexDesktop)
+	for _, app := range apps {
+		app.release()
+	}
+	return len(apps) > 0
 }
 
 func restartCodexDesktop() error {
-	return runCodexRestart(runningApplications(isCodexDesktop), findCodexApplication(), openCodexApplication)
+	return runCodexRestart(runningApplications(isCodexDesktop), findCodexApplication(), codexDesktopRunning, openCodexApplication)
 }
 
 // runningApplications returns the running applications that match; the
@@ -101,9 +111,13 @@ func accountNSString(value objc.ID) string {
 }
 
 func findCodexApplication() string {
-	paths := []string{"/Applications/Codex.app"}
-	if home, err := os.UserHomeDir(); err == nil {
-		paths = append(paths, filepath.Join(home, "Applications", "Codex.app"))
+	// The desktop app was renamed from Codex to ChatGPT, keeping its bundle id.
+	var paths []string
+	for _, name := range []string{"ChatGPT.app", "Codex.app"} {
+		paths = append(paths, filepath.Join("/Applications", name))
+		if home, err := os.UserHomeDir(); err == nil {
+			paths = append(paths, filepath.Join(home, "Applications", name))
+		}
 	}
 	for _, path := range paths {
 		if info, err := os.Stat(path); err == nil && info.IsDir() {

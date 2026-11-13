@@ -128,6 +128,14 @@ const (
 	xLegacyRunningManual          textKey = "legacyRunningManual"
 	xLegacyQuitAndContinue        textKey = "legacyQuitAndContinue"
 	xLegacyQuitFailed             textKey = "legacyQuitFailed"
+	xCodexDesktopShare            textKey = "codexDesktopShare"
+	xCodexDesktopShareHint        textKey = "codexDesktopShareDescription"
+	xCodexDesktopRestore          textKey = "codexDesktopRestore"
+	xCodexDesktopRestoreHint      textKey = "codexDesktopRestoreDescription"
+	xCodexDesktopRestored         textKey = "codexDesktopRestored"
+	xCodexDesktopQuitFirst        textKey = "codexDesktopQuitFirst"
+	xCodexDesktopNoBackup         textKey = "codexDesktopNoBackup"
+	xCodexDesktopRestoreFailed    textKey = "codexDesktopRestoreFailed"
 )
 
 // extraTexts is indexed by textKey, then by position in l10n.Languages():
@@ -646,6 +654,48 @@ var extraTexts = map[textKey][7]string{
 	xLegacyQuitFailed: {
 		"CodexRunway did not quit", "CodexRunway 没有退出", "CodexRunway 沒有結束", "CodexRunway가 종료되지 않았습니다",
 		"CodexRunway が終了しませんでした", "CodexRunway не закрылся", "CodexRunway ne s’est pas fermé",
+	},
+	xCodexDesktopShare: {
+		"Share local projects in the ChatGPT desktop app", "在 ChatGPT 桌面端共享本机项目", "在 ChatGPT 桌面版共用本機專案", "ChatGPT 데스크톱 앱에서 로컬 프로젝트 공유",
+		"ChatGPT デスクトップアプリでローカルプロジェクトを共有", "Общие локальные проекты в приложении ChatGPT", "Partager les projets locaux dans l’app ChatGPT",
+	},
+	xCodexDesktopShareHint: {
+		"Only between OAuth accounts: carry projects bound to local folders and how chats are filed under them over to the new account. Sharing from or to an API key account is not supported. Applies only while the desktop app is closed or restarted after switching; a backup is made before every sharing change.",
+		"仅支持 OAuth 账号之间共享，将绑定本机文件夹的项目及其会话归类带到新账号；不支持从 API Key 账号共享或共享到 API Key 账号，仅在桌面端已退出或切换后重启时生效，每次共享修改前自动备份",
+		"僅支援 OAuth 帳號之間共用，將綁定本機資料夾的專案及其對話歸類帶到新帳號；不支援從 API Key 帳號共用或共用至 API Key 帳號，僅在桌面版已結束或切換後重新啟動時生效，每次共用修改前自動備份",
+		"OAuth 계정 간에만 로컬 폴더에 연결된 프로젝트와 대화 분류를 새 계정으로 가져옵니다. API 키 계정에서 또는 API 키 계정으로의 공유는 지원하지 않습니다. 데스크톱 앱이 종료되어 있거나 전환 후 재시작할 때만 적용되며, 공유 데이터를 변경하기 전에 백업합니다.",
+		"OAuth アカウント間でのみ、ローカルフォルダに紐づくプロジェクトと会話の分類を新しいアカウントへ引き継ぎます。API キーアカウントから、または API キーアカウントへの共有には対応していません。デスクトップアプリの終了中か切り替え後の再起動時のみ有効で、共有による変更の前にバックアップします。",
+		"Только между OAuth-аккаунтами переносит проекты локальных папок и распределение чатов по ним. Перенос из аккаунта с API-ключом или в него не поддерживается. Приложение должно быть закрыто или перезапущено после переключения; перед изменением данных общего доступа создаётся копия.",
+		"Uniquement entre comptes OAuth : reprend les projets liés aux dossiers locaux et le classement des discussions. Le partage depuis ou vers un compte à clé API n’est pas pris en charge. L’app doit être fermée ou redémarrée après le changement ; une sauvegarde précède chaque modification liée au partage.",
+	},
+	xCodexDesktopRestore: {
+		"Undo last sharing", "撤销上次共享", "撤銷上次共用", "마지막 공유 실행 취소",
+		"前回の共有を取り消す", "Отменить последний перенос", "Annuler le dernier partage",
+	},
+	xCodexDesktopRestoreHint: {
+		"Restore the local desktop data saved before the last sharing; the ChatGPT desktop app will quit and reopen as needed",
+		"恢复上次共享前保存的本机桌面端数据，操作会按需退出并重新打开 ChatGPT 桌面端",
+		"還原上次共用前儲存的本機桌面版資料，操作會視需要結束並重新開啟 ChatGPT 桌面版",
+		"마지막 공유 전의 로컬 데이터를 복원합니다; 필요하면 ChatGPT 데스크톱 앱을 종료하고 다시 엽니다",
+		"前回の共有前に保存したローカルデータを復元します、必要に応じて ChatGPT デスクトップアプリを終了して開き直します",
+		"Восстанавливает локальные данные перед последним переносом; приложение ChatGPT будет закрыто и открыто при необходимости",
+		"Restaure les données locales avant le dernier partage ; l’app ChatGPT sera fermée et rouverte si nécessaire",
+	},
+	xCodexDesktopRestored: {
+		"Last sharing undone", "已撤销上次共享", "已撤銷上次共用", "마지막 공유를 취소했습니다",
+		"前回の共有を取り消しました", "Последний перенос отменён", "Dernier partage annulé",
+	},
+	xCodexDesktopQuitFirst: {
+		"Quit the ChatGPT desktop app first", "请先退出 ChatGPT 桌面端", "請先結束 ChatGPT 桌面版", "먼저 ChatGPT 데스크톱 앱을 종료하세요",
+		"先に ChatGPT デスクトップアプリを終了してください", "Сначала закройте приложение ChatGPT", "Quittez d’abord l’app ChatGPT",
+	},
+	xCodexDesktopNoBackup: {
+		"No sharing to undo", "没有可撤销的共享", "沒有可撤銷的共用", "취소할 공유가 없습니다",
+		"取り消せる共有がありません", "Нет переноса для отмены", "Aucun partage à annuler",
+	},
+	xCodexDesktopRestoreFailed: {
+		"Restoring desktop data failed", "恢复桌面端数据失败", "還原桌面版資料失敗", "데스크톱 데이터 복원에 실패했습니다",
+		"デスクトップデータの復元に失敗しました", "Не удалось восстановить данные приложения", "Échec de la restauration des données de l’app",
 	},
 }
 
