@@ -52,8 +52,8 @@ func readAll(t *testing.T) func(io.ReadCloser, error) string {
 
 func TestUpdateFeedFollowsTheChannelOfTheVersion(t *testing.T) {
 	for version, want := range map[string]string{
-		"1.11.1":        "https://github.com/Licoy/Quosparr/releases/latest/download/update-darwin-arm64.json",
-		"1.12.0-beta.1": "https://github.com/Licoy/Quosparr/releases/download/v1-beta/update-darwin-arm64.json",
+		"1.11.1":        "https://github.com/Alice-Marx/Quosparr-allAI/releases/latest/download/update-darwin-arm64.json",
+		"1.12.0-beta.1": "https://github.com/Alice-Marx/Quosparr-allAI/releases/download/v1-beta/update-darwin-arm64.json",
 	} {
 		if got := updateFeed(version, "darwin", "arm64"); got != want {
 			t.Errorf("updateFeed(%q) = %q, want %q", version, got, want)

@@ -20,8 +20,8 @@ type ClientFunc func(ctx context.Context) (*http.Client, error)
 // staged mygo.json (Scripts/stage-v1-config.py): stable builds read the
 // latest release, prerelease builds the fixed v1-beta release.
 const (
-	stableUpdateFeed = "https://github.com/Licoy/Quosparr/releases/latest/download/"
-	betaUpdateFeed   = "https://github.com/Licoy/Quosparr/releases/download/v1-beta/"
+	stableUpdateFeed = "https://github.com/Alice-Marx/Quosparr-allAI/releases/latest/download/"
+	betaUpdateFeed   = "https://github.com/Alice-Marx/Quosparr-allAI/releases/download/v1-beta/"
 )
 
 // updateFeed returns the URL of the update manifest of the build with
