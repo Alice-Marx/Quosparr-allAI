@@ -14,7 +14,7 @@ Quosparr est une application native de barre de menus / zone de notification pou
 
 </div>
 
-> Ce dépôt est le [fork d’Alice-Marx](https://github.com/Alice-Marx/Quosparr) de [Licoy/Quosparr](https://github.com/Licoy/Quosparr), sous la licence GNU Affero General Public License v3.0 ([LICENSE](LICENSE)). Les changements d’Alice sont un panneau distinct de quota hebdomadaire pour **l’assistant Grok Bot** et un panneau distinct d’usage **Cursor**. Aucun des deux **n’a d’API de facturation tierce publique**. Chaque panneau ne lit que son propre instantané JSON local. Ils ne récupèrent ni cookies, ni pages de réglages Grok Bot, ni le HTML des tableaux de bord Cursor, et ce fork ne fournit pas de routine qui écrit ces instantanés.
+> Ce dépôt est le [fork d’Alice-Marx](https://github.com/Alice-Marx/Quosparr) de [Licoy/Quosparr](https://github.com/Licoy/Quosparr), sous la licence GNU Affero General Public License v3.0 ([LICENSE](LICENSE)). Les changements d’Alice sont un panneau distinct de quota hebdomadaire pour **l’assistant Grok Bot**, un panneau distinct d’usage **Cursor**, et quatre panneaux qui lisent la connexion CLI déjà présente sur cette machine : **Kimi Code**, **GLM**, **OpenCode** et **Gemini**. Les deux premiers **n’ont pas d’API de facturation tierce publique** : chacun ne lit que son propre instantané JSON local, ils ne récupèrent ni cookies, ni pages de réglages Grok Bot, ni le HTML des tableaux de bord Cursor, et ce fork ne fournit pas de routine qui écrit ces instantanés. Les quatre autres fonctionnent autrement : chacun lit la connexion déjà enregistrée par son CLI et interroge directement l’endpoint de quota officiel de l’éditeur, sans jamais afficher l’identifiant. Identifiant absent, identifiant expiré, absence d’abonnement et échec de requête ont chacun leur message, et chaque panneau compte les jetons des journaux de session locaux pour donner un coût équivalent API, en affichant « prix manquant » plutôt qu’une estimation quand le tarif ou l’unité est inconnu.
 
 ## Points forts
 
@@ -58,6 +58,34 @@ Quosparr est une application native de barre de menus / zone de notification pou
 - Affiche le pourcentage inclus utilisé, l’heure de réinitialisation, l’état à la demande et, s’ils sont présents, les dollars à la demande. Quand `includedPools` est présent, la bande principale montre une ligne de progression pour les modèles Cursor et une pour les autres modèles. Sans cet objet, une répartition éventuelle montre les produits les plus importants. `grokBotWeeklyRef`, facultatif, renvoie au panneau de l’assistant Grok Bot et ne copie pas les chiffres hebdomadaires. `periodStart` et `history`, facultatifs, alimentent la vitesse et la projection d’usage.
 - L’actualisation surveille l’heure de modification du fichier d’instantané, et l’actualisation de l’en-tête ne relit que ce fichier. L’état vide explique le chemin d’import et l’absence d’API officielle.
 - **Importer JSON** copie le fichier choisi vers le chemin de l’instantané après validation. Les champs inconnus, y compris les jetons, sont écartés. Il n’y a pas d’écrivain intégré. Copiez [`examples/cursor-usage.json`](examples/cursor-usage.json), ou remplacez le fichier vous-même. Une routine ultérieure doit écrire un fichier temporaire dans le même répertoire, puis le renommer.
+
+**Usage Kimi Code**
+
+- L’onglet est **Kimi Code**, le titre « Quota ». Il lit la connexion déjà enregistrée par le CLI Kimi Code sur cette machine (`~/.kimi-code/credentials/`, `KIMI_CODE_HOME` pour la changer) et interroge directement `https://api.kimi.com/coding/v1/usages` ; le site international est `https://api.kimi.ai/coding/v1`, modifiable par `KIMI_CODE_BASE_URL`. Aucun cookie n’est récupéré et il ne s’agit pas d’un instantané écrit à la main.
+- Affiche l’usage des fenêtres de 5 heures, 7 jours, du total mensuel et du code mensuel avec leur propre heure de réinitialisation, ainsi que le solde du portefeuille supplémentaire.
+- Le jeton d’accès est rafraîchi avant expiration et réécrit de façon atomique dans le fichier d’identifiants en conservant les champs inconnus ; le contenu du fichier n’est jamais affiché.
+- Un identifiant refusé invite à se reconnecter avec `/login` dans le CLI Kimi Code, et reste distinct d’un identifiant absent ou d’une requête en échec.
+
+**Usage GLM**
+
+- L’onglet est **GLM**, le titre « Quota Coding Plan ». L’identifiant vient du stockage du CLI ZCode `~/.zcode/v2/credentials.json`, et la requête part directement vers `https://bigmodel.cn/api/monitor/usage/quota/limit` ; le site international `api.z.ai` utilise le même chemin.
+- L’en-tête d’autorisation porte le jeton brut, sans préfixe `Bearer` ; un jeton préfixé est refusé comme un jeton expiré.
+- Cet endpoint n’a pas de rafraîchissement : un identifiant expiré ne se renouvelle qu’avec `zcode login`, le panneau ne le prolonge pas.
+- Affiche la consommation du quota Coding Plan et l’heure de réinitialisation, les champs de quota suivant la définition du CLI ZCode lui-même ; identifiant absent, identifiant expiré et requête en échec ont chacun leur message.
+
+**Usage OpenCode**
+
+- L’onglet est **OpenCode**. Il ouvre `~/.local/share/opencode/opencode.db` en lecture seule pour y prendre la connexion enregistrée, puis interroge `https://opencode.ai/zen/go/v1/usage` (fenêtres glissante, hebdomadaire et mensuelle) et `https://opencode.ai/console/api/policies/current-budgets` (budgets de l’organisation).
+- Il ne rafraîchit jamais l’identifiant et n’écrit jamais dans la base : le CLI peut avoir ce fichier ouvert.
+- Le coût des sessions est le montant que le CLI OpenCode a lui-même enregistré, sans recalcul par une grille tarifaire.
+- Identifiant absent, identifiant expiré, fonction désactivée pour l’organisation et requête en échec ont chacun leur message.
+
+**Usage Gemini**
+
+- L’onglet est **Gemini**, le titre « Quota Code Assist ». Il lit `~/.gemini/oauth_creds.json` et interroge `https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota`, en affichant par modèle le nombre de requêtes restantes et l’heure de réinitialisation.
+- Un identifiant expiré est rafraîchi par la procédure officielle ; si le client OAuth nécessaire à ce rafraîchissement n’est pas configuré, ou si le rafraîchissement est refusé, le panneau invite à laisser le CLI Gemini réécrire le fichier d’identifiants et signale un identifiant expiré plutôt qu’une erreur de lecture.
+- Sans abonnement Code Assist payant, le panneau affiche un état distinct « aucun abonnement » au lieu de le traiter comme une erreur.
+- Identifiant absent et requête en échec ont chacun leur message.
 
 **Tous les fournisseurs**
 
@@ -140,6 +168,10 @@ Linux nécessite GTK3, AppIndicator, un bureau prenant en charge la zone de noti
 - Les comptes et le quota Grok ne prennent en charge que OAuth / SuperGrok et les sessions legacy compatibles. Exécutez `grok login --oauth`, connectez-vous depuis l’app, importez la connexion actuelle ou collez un JSON d’identifiants. Les connexions par clé API seule ne sont pas ajoutées comme comptes gérés. `GROK_HOME` est utilisé s’il est défini, sinon `~/.grok`.
 - Le panneau de l’assistant Grok Bot n’a pas besoin du CLI Grok. Il ne lit que `~/.quosparr/grokbot-usage.json` (`%USERPROFILE%\.quosparr\grokbot-usage.json` sous Windows). Copiez-y [`examples/grokbot-usage.json`](examples/grokbot-usage.json), ou utilisez **Importer JSON** sur ce panneau.
 - Le panneau d’usage Cursor n’a pas besoin du CLI Grok ni d’une connexion Cursor dans cette application. Il ne lit que `~/.quosparr/cursor-usage.json` (`%USERPROFILE%\.quosparr\cursor-usage.json` sous Windows). Copiez-y [`examples/cursor-usage.json`](examples/cursor-usage.json), ou utilisez **Importer JSON** sur ce panneau. Un fichier limité aux champs requis est [`examples/cursor-usage.min.json`](examples/cursor-usage.min.json).
+- Le panneau d’usage Kimi Code n’a besoin d’aucune connexion Kimi Code dans cette application, ni d’aucun import d’instantané. Il lit la connexion déjà enregistrée par le CLI Kimi Code (`~/.kimi-code/credentials/`, `KIMI_CODE_HOME` pour la changer) ; sans identifiant, connectez-vous une fois avec `/login` de ce CLI.
+- Le panneau d’usage GLM n’a besoin d’aucune connexion dans cette application, ni d’aucun import d’instantané. Il lit l’identifiant déjà enregistré par le CLI ZCode (`~/.zcode/v2/credentials.json`) ; s’il a expiré, relancez `zcode login`.
+- Le panneau d’usage OpenCode n’a besoin d’aucune connexion dans cette application, ni d’aucun import d’instantané. Il lit en lecture seule la connexion de `~/.local/share/opencode/opencode.db` et n’écrit jamais dans cette base.
+- Le panneau d’usage Gemini n’a besoin d’aucune connexion dans cette application, ni d’aucun import d’instantané. Il lit la connexion déjà enregistrée par le CLI Gemini dans `~/.gemini/oauth_creds.json` ; sans abonnement Code Assist payant, il affiche « aucun abonnement ».
 
 ## Widgets bureau
 

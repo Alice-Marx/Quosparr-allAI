@@ -14,7 +14,7 @@ Quosparr는 macOS, Windows, Linux용 네이티브 메뉴 막대 / 시스템 트�
 
 </div>
 
-> 이 저장소는 [Licoy/Quosparr](https://github.com/Licoy/Quosparr)를 기반으로 한 [Alice-Marx의 포크](https://github.com/Alice-Marx/Quosparr)이며, GNU Affero General Public License v3.0([LICENSE](LICENSE))을 따릅니다. Alice가 추가한 것은 별도의 **Grok Bot 도우미** 주간 할당량 패널과 별도의 **Cursor** 사용량 패널입니다. 둘 다 **공개된 서드파티 결제 API가 없습니다**. 각 패널은 자신의 로컬 JSON 스냅샷만 읽습니다. 쿠키, Grok Bot 설정 페이지, Cursor 대시보드 HTML은 스크랩하지 않으며, 이 포크는 어느 스냅샷도 쓰는 루틴을 포함하지 않습니다.
+> 이 저장소는 [Licoy/Quosparr](https://github.com/Licoy/Quosparr)를 기반으로 한 [Alice-Marx의 포크](https://github.com/Alice-Marx/Quosparr)이며, GNU Affero General Public License v3.0([LICENSE](LICENSE))을 따릅니다. Alice가 추가한 것은 별도의 **Grok Bot 도우미** 주간 할당량 패널, 별도의 **Cursor** 사용량 패널, 그리고 이 컴퓨터의 CLI 로그인을 읽는 네 개의 패널(**Kimi Code**, **GLM**, **OpenCode**, **Gemini**)입니다. 앞의 둘은 **공개된 서드파티 결제 API가 없습니다**. 각 패널은 자신의 로컬 JSON 스냅샷만 읽고, 쿠키나 Grok Bot 설정 페이지, Cursor 대시보드 HTML은 스크랩하지 않으며, 이 포크는 어느 스냅샷도 쓰는 루틴을 포함하지 않습니다. 뒤의 넷은 다릅니다. 각 패널은 CLI가 이미 저장한 로그인 정보를 읽어 해당 공급자의 공식 할당량 엔드포인트를 직접 호출하며 자격 증명 내용은 표시하지 않습니다. 자격 증명 없음, 자격 증명 만료, 구독 없음, 요청 실패는 각각 다른 안내를 보여 주고, 로컬 세션 로그의 토큰을 세어 API 등가 비용을 함께 표시하며, 단가나 기준을 알 수 없으면 추정하지 않고 ‘가격 없음’으로 표시합니다.
 
 ## 주요 기능
 
@@ -58,6 +58,34 @@ Quosparr는 macOS, Windows, Linux용 네이티브 메뉴 막대 / 시스템 트�
 - 포함 사용 비율, 초기화 시각, 온디맨드 상태, 선택적 온디맨드 금액을 보여 줍니다. `includedPools`가 있으면 본문은 Cursor 모델과 기타 모델의 진행 막대 두 줄입니다. 그 객체가 없고 분해가 있으면 비중이 큰 제품을 보여 줍니다. 선택 항목 `grokBotWeeklyRef`는 Grok Bot 도우미 패널을 가리키며 주간 숫자는 복사하지 않습니다. 선택 항목 `periodStart`와 `history`는 소모 속도와 사용량 추정에 쓰입니다.
 - 새로고침은 스냅샷 파일의 수정 시각을 감시하고, 헤더 새로고침도 그 파일만 다시 읽습니다. 스냅샷이 없으면 빈 상태가 가져오기 경로와 공식 API가 없음을 설명합니다.
 - **JSON 가져오기**는 선택한 파일을 검증한 뒤 스냅샷 경로에 복사합니다. 토큰을 포함한 알 수 없는 필드는 버려집니다. 내장 작성기는 없습니다. [`examples/cursor-usage.json`](examples/cursor-usage.json)을 복사하거나 파일을 직접 바꾸세요. 이후 루틴은 같은 디렉터리에 임시 파일을 쓴 다음 이름을 바꿔 교체해야 합니다.
+
+**Kimi Code 사용량**
+
+- 탭 이름은 **Kimi Code**이고 제목은 ‘할당량’입니다. 이 컴퓨터의 Kimi Code CLI가 이미 저장한 로그인(`~/.kimi-code/credentials/`, `KIMI_CODE_HOME`으로 변경)을 읽어 `https://api.kimi.com/coding/v1/usages`를 직접 호출합니다. 국제 사이트는 `https://api.kimi.ai/coding/v1`이며 `KIMI_CODE_BASE_URL`로 바꿀 수 있습니다. 쿠키를 긁지 않고, 손으로 만든 스냅샷도 쓰지 않습니다.
+- 5시간, 7일, 월간 총량, 월간 코드 네 구간의 사용량과 각 초기화 시각, 그리고 추가 지갑 잔액을 보여 줍니다.
+- 액세스 토큰은 만료 전에 자동으로 갱신되고, 알 수 없는 필드를 보존한 채 자격 증명 파일에 원자적으로 다시 씁니다. 파일 내용은 표시하지 않습니다.
+- 자격 증명이 거부되면 Kimi Code CLI의 `/login`으로 다시 로그인하라고 안내하며, 자격 증명 없음과 요청 실패는 따로 알려 줍니다.
+
+**GLM 사용량**
+
+- 탭 이름은 **GLM**이고 제목은 ‘Coding Plan 할당량’입니다. 자격 증명은 ZCode CLI의 `~/.zcode/v2/credentials.json`에서 가져오고 `https://bigmodel.cn/api/monitor/usage/quota/limit`를 직접 호출합니다. 국제 사이트 `api.z.ai`는 같은 경로를 씁니다.
+- 인증 헤더에는 `Bearer` 접두사 없이 토큰을 그대로 넣습니다. 접두사를 붙이면 만료된 자격 증명처럼 거부됩니다.
+- 그 엔드포인트에는 갱신 그랜트가 없으므로 만료된 자격 증명은 `zcode login`으로만 다시 받을 수 있습니다. 패널이 대신 갱신하지 않습니다.
+- Coding Plan 할당량 사용량과 초기화 시각을 보여 주며 할당량 필드는 ZCode CLI 자체의 정의를 따릅니다. 자격 증명 없음, 만료, 요청 실패는 따로 알려 줍니다.
+
+**OpenCode 사용량**
+
+- 탭 이름은 **OpenCode**입니다. 저장된 로그인을 얻기 위해 `~/.local/share/opencode/opencode.db`를 읽기 전용으로 열고, `https://opencode.ai/zen/go/v1/usage`(롤링·주간·월간 세 구간)와 `https://opencode.ai/console/api/policies/current-budgets`(조직 예산)를 호출합니다.
+- 자격 증명을 갱신하지 않고 데이터베이스도 쓰지 않습니다. CLI가 그 파일을 열어 두었을 수 있기 때문입니다.
+- 세션 비용은 OpenCode CLI가 직접 기록한 금액을 그대로 쓰며 가격표로 다시 계산하지 않습니다.
+- 자격 증명 없음, 자격 증명 만료, 조직에서 기능을 꺼 둔 경우, 요청 실패를 각각 따로 알려 줍니다.
+
+**Gemini 사용량**
+
+- 탭 이름은 **Gemini**이고 제목은 ‘Code Assist 할당량’입니다. `~/.gemini/oauth_creds.json`을 읽고 `https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota`를 호출해 모델별 남은 요청 수와 초기화 시각을 보여 줍니다.
+- 자격 증명이 만료되면 공식 갱신 절차로 갱신을 시도합니다. 갱신에 필요한 OAuth 클라이언트 설정이 없거나 갱신이 거부되면 Gemini CLI로 자격 증명 파일을 다시 쓰도록 안내하며, 읽기 오류가 아니라 자격 증명 만료로 처리합니다.
+- 유료 Code Assist 구독이 없으면 오류로 처리하지 않고 ‘구독 없음’이라는 별도 상태로 표시합니다.
+- 자격 증명 없음과 요청 실패는 각각 따로 알려 줍니다.
 
 **세 공급자 공통**
 
@@ -140,6 +168,10 @@ Linux에는 GTK3, AppIndicator, 트레이를 지원하는 데스크톱, 프록�
 - Grok 계정과 할당량은 OAuth / SuperGrok 및 호환 레거시 세션만 지원합니다. `grok login --oauth`를 실행하거나, 앱에서 로그인하거나, 현재 로그인을 가져오거나, 자격 증명 JSON을 붙여넣으세요. API 키만 있는 로그인은 관리 계정으로 추가되지 않습니다. `GROK_HOME`이 설정되어 있으면 그 값을 쓰고, 아니면 `~/.grok`를 씁니다.
 - Grok Bot 도우미 패널은 Grok CLI가 필요 없습니다. `~/.quosparr/grokbot-usage.json`(Windows에서는 `%USERPROFILE%\.quosparr\grokbot-usage.json`)만 읽습니다. [`examples/grokbot-usage.json`](examples/grokbot-usage.json)을 그 경로에 복사하거나, 해당 패널에서 **JSON 가져오기**를 사용하세요.
 - Cursor 사용량 패널은 Grok CLI가 필요 없고, 이 앱 안에서 Cursor에 로그인하지도 않습니다. `~/.quosparr/cursor-usage.json`(Windows에서는 `%USERPROFILE%\.quosparr\cursor-usage.json`)만 읽습니다. [`examples/cursor-usage.json`](examples/cursor-usage.json)을 그 경로에 복사하거나, 해당 패널에서 **JSON 가져오기**를 사용하세요. 필수 필드만 있는 파일은 [`examples/cursor-usage.min.json`](examples/cursor-usage.min.json)입니다.
+- Kimi Code 사용량 패널은 이 앱 안에서 Kimi Code에 로그인할 필요도, 스냅샷을 가져올 필요도 없습니다. Kimi Code CLI가 이미 저장한 로그인(`~/.kimi-code/credentials/`, `KIMI_CODE_HOME`으로 변경)을 읽습니다. 자격 증명이 없으면 그 CLI의 `/login`으로 한 번 로그인하세요.
+- GLM 사용량 패널은 이 앱 안에서 로그인할 필요도, 스냅샷을 가져올 필요도 없습니다. ZCode CLI가 이미 저장한 자격 증명(`~/.zcode/v2/credentials.json`)을 읽습니다. 만료되었다면 `zcode login`을 다시 실행하세요.
+- OpenCode 사용량 패널은 이 앱 안에서 로그인할 필요도, 스냅샷을 가져올 필요도 없습니다. `~/.local/share/opencode/opencode.db`의 로그인을 읽기 전용으로 읽고 그 데이터베이스에는 쓰지 않습니다.
+- Gemini 사용량 패널은 이 앱 안에서 로그인할 필요도, 스냅샷을 가져올 필요도 없습니다. Gemini CLI가 이미 저장한 `~/.gemini/oauth_creds.json`을 읽습니다. 유료 Code Assist 구독이 없으면 ‘구독 없음’으로 표시합니다.
 
 ## 데스크톱 위젯
 

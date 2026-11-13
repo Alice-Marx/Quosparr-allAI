@@ -14,7 +14,7 @@ Quosparr is a native menu bar / system tray app for macOS, Windows, and Linux. I
 
 </div>
 
-> This repository is [Alice-Marx's fork](https://github.com/Alice-Marx/Quosparr) of [Licoy/Quosparr](https://github.com/Licoy/Quosparr), under the GNU Affero General Public License v3.0 ([LICENSE](LICENSE)). Alice's changes are a separate **Grok Bot assistant** weekly quota panel and a separate **Cursor** usage panel. Neither has a **public third-party billing API**. Each panel reads its own local JSON snapshot. They do not scrape cookies, Grok Bot settings pages, or Cursor dashboard HTML, and this fork does not ship a routine that writes either snapshot.
+> This repository is [Alice-Marx's fork](https://github.com/Alice-Marx/Quosparr) of [Licoy/Quosparr](https://github.com/Licoy/Quosparr), under the GNU Affero General Public License v3.0 ([LICENSE](LICENSE)). Alice's changes are a separate **Grok Bot assistant** weekly quota panel, a separate **Cursor** usage panel, and four panels that read the CLI login already on this machine: **Kimi Code**, **GLM**, **OpenCode** and **Gemini**. The first two have no **public third-party billing API**: each reads only its own local JSON snapshot, they do not scrape cookies, Grok Bot settings pages, or Cursor dashboard HTML, and this fork does not ship a routine that writes either snapshot. The other four work differently: each reads the login its CLI already stored and calls the vendor's own quota endpoint directly, never showing the credential. A missing credential, an expired credential, no subscription and a failed request each have their own message, and each panel counts tokens from local session logs to report API-equivalent cost, showing no price rather than a guess when a rate or unit is unknown.
 
 ## Highlights
 
@@ -58,6 +58,34 @@ Quosparr is a native menu bar / system tray app for macOS, Windows, and Linux. I
 - Shows included used percent, reset time, on-demand status, and optional on-demand dollars. When `includedPools` is present, the main strip shows a progress row for Cursor Models and one for Other Models. When that object is absent and a breakdown is present, it shows the top product shares. Optional `grokBotWeeklyRef` points at the Grok Bot assistant panel and does not copy weekly numbers. Optional `periodStart` and `history` feed burn rate and usage pace.
 - Refresh watches the snapshot file's modification time, and the header refresh reloads that file. An empty snapshot explains the import path and that there is no official API.
 - **Import JSON** copies a chosen file into the snapshot path after validation. Unknown fields, including tokens, are dropped. There is no built-in writer. Copy [`examples/cursor-usage.json`](examples/cursor-usage.json), or replace the file yourself. A later routine should write a temporary file in the same directory and rename it into place.
+
+**Kimi Code usage**
+
+- The tab is **Kimi Code** with the title Quota. It reads the login the Kimi Code CLI already stored on this machine (`~/.kimi-code/credentials/`, `KIMI_CODE_HOME` overrides) and calls `https://api.kimi.com/coding/v1/usages` directly; the international site is `https://api.kimi.ai/coding/v1`, overridable with `KIMI_CODE_BASE_URL`. It scrapes no cookies and is not a hand-written snapshot.
+- Shows the 5-hour, 7-day, monthly total and monthly code windows with their own reset times, plus the extra wallet balance.
+- It refreshes the access token before it expires and writes the credential file back atomically, keeping unknown fields; the file's contents are never shown.
+- A rejected credential asks for a fresh `/login` in the Kimi Code CLI, reported separately from a missing credential and a failed request.
+
+**GLM usage**
+
+- The tab is **GLM** with the title Coding Plan quota. The credential comes from the ZCode CLI store `~/.zcode/v2/credentials.json`, and the panel calls `https://bigmodel.cn/api/monitor/usage/quota/limit` directly; the international site `api.z.ai` uses the same path.
+- The authorization header carries the bare token, without a `Bearer` prefix; a prefixed token is rejected like an expired one.
+- That endpoint has no refresh grant, so an expired credential can only be renewed with `zcode login`; the panel does not renew it for you.
+- Shows Coding Plan quota usage and the reset time, with the quota fields following the ZCode CLI's own definition; a missing credential, an expired credential and a failed request are reported separately.
+
+**OpenCode usage**
+
+- The tab is **OpenCode**. It opens `~/.local/share/opencode/opencode.db` read-only for the stored login, then calls `https://opencode.ai/zen/go/v1/usage` (rolling, weekly and monthly windows) and `https://opencode.ai/console/api/policies/current-budgets` (organization budgets).
+- It never refreshes the credential and never writes the database, because the CLI may have that file open.
+- Session cost is the amount the OpenCode CLI recorded itself, not a re-priced estimate.
+- A missing credential, an expired credential, an organization with the feature switched off and a failed request are reported separately.
+
+**Gemini usage**
+
+- The tab is **Gemini** with the title Code Assist quota. It reads `~/.gemini/oauth_creds.json` and calls `https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota`, showing remaining requests and the reset time per model.
+- An expired credential is refreshed through the official flow; when the OAuth client that refresh needs is not configured, or the refresh is rejected, the panel asks you to let the Gemini CLI rewrite the credential file and reports an expired credential rather than a reading error.
+- Without a paid Code Assist subscription it shows a separate No subscription state instead of treating that as an error.
+- A missing credential and a failed request each have their own message.
 
 **All providers**
 
@@ -140,6 +168,10 @@ Linux needs GTK3, AppIndicator, a desktop with tray support, and a working Secre
 - Grok accounts and quota support OAuth / SuperGrok and compatible legacy sessions only. Run `grok login --oauth`, sign in from the app, import the current login, or paste credential JSON. API-key-only logins are not added as managed accounts. `GROK_HOME` is used when set, otherwise `~/.grok`.
 - The Grok Bot assistant panel does not need the Grok CLI. It reads only `~/.quosparr/grokbot-usage.json` (`%USERPROFILE%\.quosparr\grokbot-usage.json` on Windows). Copy [`examples/grokbot-usage.json`](examples/grokbot-usage.json) there, or use **Import JSON** on that panel.
 - The Cursor usage panel does not need the Grok CLI or a Cursor login inside this app. It reads only `~/.quosparr/cursor-usage.json` (`%USERPROFILE%\.quosparr\cursor-usage.json` on Windows). Copy [`examples/cursor-usage.json`](examples/cursor-usage.json) there, or use **Import JSON** on that panel. A file with only the required fields is [`examples/cursor-usage.min.json`](examples/cursor-usage.min.json).
+- The Kimi Code usage panel needs no Kimi Code login inside this app and no snapshot import. It reads the login the Kimi Code CLI already stored (`~/.kimi-code/credentials/`, `KIMI_CODE_HOME` overrides); without a credential, sign in once with that CLI's `/login`.
+- The GLM usage panel needs no login inside this app and no snapshot import. It reads the credential the ZCode CLI already stored (`~/.zcode/v2/credentials.json`); once it has expired, run `zcode login` again.
+- The OpenCode usage panel needs no login inside this app and no snapshot import. It reads the login from `~/.local/share/opencode/opencode.db` read-only and never writes that database.
+- The Gemini usage panel needs no login inside this app and no snapshot import. It reads the login the Gemini CLI already stored at `~/.gemini/oauth_creds.json`; without a paid Code Assist subscription it shows No subscription.
 
 ## Desktop Widgets
 

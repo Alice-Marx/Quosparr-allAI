@@ -14,7 +14,7 @@ Quosparr は macOS、Windows、Linux 向けのネイティブなメニューバ�
 
 </div>
 
-> このリポジトリは [Licoy/Quosparr](https://github.com/Licoy/Quosparr) の [Alice-Marx によるフォーク](https://github.com/Alice-Marx/Quosparr) で、GNU Affero General Public License v3.0（[LICENSE](LICENSE)）に従います。Alice が加えた変更は、独立した **Grok Bot アシスタント**の週次クォータパネルと、独立した **Cursor** 使用量パネルです。どちらにも**公開されたサードパーティ課金 API はありません**。各パネルは自分のローカル JSON スナップショットだけを読みます。Cookie、Grok Bot の設定ページ、Cursor ダッシュボードの HTML は取得せず、このフォークにはどちらのスナップショットを書くルーチンも含まれません。
+> このリポジトリは [Licoy/Quosparr](https://github.com/Licoy/Quosparr) の [Alice-Marx によるフォーク](https://github.com/Alice-Marx/Quosparr) で、GNU Affero General Public License v3.0（[LICENSE](LICENSE)）に従います。Alice が加えた変更は、独立した **Grok Bot アシスタント**の週次クォータパネル、独立した **Cursor** 使用量パネル、そしてこのマシンの CLI ログインを読む 4 つのパネル（**Kimi Code**、**GLM**、**OpenCode**、**Gemini**）です。前者 2 つには**公開されたサードパーティ課金 API はありません**。各パネルは自分のローカル JSON スナップショットだけを読み、Cookie、Grok Bot の設定ページ、Cursor ダッシュボードの HTML は取得せず、このフォークにはどちらのスナップショットを書くルーチンも含まれません。後者 4 つは異なります。各パネルは CLI がすでに保存したログイン情報を読み、各ベンダーの公式クォータエンドポイントへ直接リクエストし、資格情報の中身は表示しません。資格情報がない、期限切れ、サブスクリプションがない、リクエスト失敗はそれぞれ別の案内を出し、ローカルセッションログの token を数えて API 換算コストも表示します。単価や前提が分からないときは推測せず「価格なし」と表示します。
 
 ## ハイライト
 
@@ -58,6 +58,34 @@ Quosparr は macOS、Windows、Linux 向けのネイティブなメニューバ�
 - 含まれる使用率、リセット時刻、オンデマンドの状態、任意のオンデマンド金額を表示します。`includedPools` があるとき、メインの表示は Cursor モデルとその他のモデルの 2 本の進捗です。そのオブジェクトが無く内訳があるときは、割合の高い製品を表示します。任意の `grokBotWeeklyRef` は Grok Bot アシスタントのパネルを指し、週次の数値はコピーしません。任意の `periodStart` と `history` は消費速度と使用量の見積もりに使います。
 - 更新はスナップショットファイルの更新時刻を監視し、ヘッダーの更新もそのファイルだけを読み直します。スナップショットが無いときは、空の状態が取り込みパスと、公式 API がないことを説明します。
 - **JSON を取り込む**は、選んだファイルを検証してからスナップショットのパスへコピーします。トークンを含む未知のフィールドは捨てられます。組み込みの書き込み処理はありません。[`examples/cursor-usage.json`](examples/cursor-usage.json) をコピーするか、自分でファイルを置き換えてください。後から加えるルーチンは、同じディレクトリに一時ファイルを書いてから名前を変更して置き換えてください。
+
+**Kimi Code 使用量**
+
+- タブは **Kimi Code**、見出しは「クォータ」です。このマシンの Kimi Code CLI がすでに保存したログイン（`~/.kimi-code/credentials/`、`KIMI_CODE_HOME` で変更可）を読み、`https://api.kimi.com/coding/v1/usages` へ直接リクエストします。国際サイトは `https://api.kimi.ai/coding/v1` で、`KIMI_CODE_BASE_URL` で変更できます。Cookie は取得せず、手書きのスナップショットでもありません。
+- 5 時間、7 日、月間合計、月間コードの 4 つの枠の使用量とそれぞれのリセット時刻、さらに追加ウォレットの残高を表示します。
+- アクセストークンは期限前に自動で更新され、未知のフィールドを残したまま資格情報ファイルへアトミックに書き戻します。ファイルの中身は表示しません。
+- 資格情報が拒否されたときは Kimi Code CLI の `/login` での再ログインを案内し、資格情報がない場合とリクエスト失敗は別々に伝えます。
+
+**GLM 使用量**
+
+- タブは **GLM**、見出しは「Coding Plan のクォータ」です。資格情報は ZCode CLI の `~/.zcode/v2/credentials.json` から取り、`https://bigmodel.cn/api/monitor/usage/quota/limit` へ直接リクエストします。国際サイト `api.z.ai` は同じパスです。
+- 認証ヘッダーには `Bearer` 接頭辞を付けずにトークンをそのまま入れます。接頭辞を付けると期限切れと同じ扱いで拒否されます。
+- このエンドポイントに更新のグラントはないため、期限切れの資格情報は `zcode login` で取り直すしかありません。パネルが代わりに更新することはありません。
+- Coding Plan のクォータ使用量とリセット時刻を表示し、クォータのフィールドは ZCode CLI 自身の定義に従います。資格情報がない場合、期限切れ、リクエスト失敗は別々に伝えます。
+
+**OpenCode 使用量**
+
+- タブは **OpenCode** です。保存されたログインを取るため `~/.local/share/opencode/opencode.db` を読み取り専用で開き、`https://opencode.ai/zen/go/v1/usage`（ローリング・週次・月次の 3 区分）と `https://opencode.ai/console/api/policies/current-budgets`（組織の予算）へリクエストします。
+- 資格情報の更新はせず、データベースにも書きません。CLI がそのファイルを開いている可能性があるためです。
+- セッションのコストは OpenCode CLI 自身が記録した金額をそのまま使い、価格表で計算し直しません。
+- 資格情報がない場合、期限切れ、組織がこの機能を無効にしている場合、リクエスト失敗は別々に伝えます。
+
+**Gemini 使用量**
+
+- タブは **Gemini**、見出しは「Code Assist のクォータ」です。`~/.gemini/oauth_creds.json` を読み、`https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota` へリクエストして、モデルごとの残りリクエスト数とリセット時刻を表示します。
+- 資格情報が期限切れになると公式の更新手順で更新を試みます。更新に必要な OAuth クライアントの設定がない、または更新が拒否されたときは、Gemini CLI で資格情報ファイルを書き直すよう案内し、読み取りエラーではなく資格情報の期限切れとして扱います。
+- 有料の Code Assist サブスクリプションがないときはエラー扱いにせず、「サブスクリプションなし」という独立した状態として表示します。
+- 資格情報がない場合とリクエスト失敗は、それぞれ別に伝えます。
 
 **3 つのプロバイダー共通**
 
@@ -140,6 +168,10 @@ Linux には GTK3、AppIndicator、トレイに対応したデスクトップ、
 - Grok のアカウントとクォータは、OAuth / SuperGrok と互換のレガシーセッションのみに対応します。`grok login --oauth` を実行するか、アプリ内でサインインするか、現在のログインを取り込むか、資格情報 JSON を貼り付けてください。API キーのみのログインは管理アカウントとして追加されません。`GROK_HOME` が設定されていればそれを使い、設定されていなければ `~/.grok` を使います。
 - Grok Bot アシスタントのパネルに Grok CLI は不要です。読むのは `~/.quosparr/grokbot-usage.json`（Windows では `%USERPROFILE%\.quosparr\grokbot-usage.json`）だけです。[`examples/grokbot-usage.json`](examples/grokbot-usage.json) をそのパスへコピーするか、そのパネルの **JSON を取り込む** を使ってください。
 - Cursor 使用量パネルに Grok CLI は不要で、このアプリの中で Cursor にログインもしません。読むのは `~/.quosparr/cursor-usage.json`（Windows では `%USERPROFILE%\.quosparr\cursor-usage.json`）だけです。[`examples/cursor-usage.json`](examples/cursor-usage.json) をそのパスへコピーするか、そのパネルの **JSON を取り込む** を使ってください。必須項目だけのファイルは [`examples/cursor-usage.min.json`](examples/cursor-usage.min.json) です。
+- Kimi Code 使用量パネルに、このアプリ内での Kimi Code ログインもスナップショットの取り込みも不要です。Kimi Code CLI がすでに保存したログイン（`~/.kimi-code/credentials/`、`KIMI_CODE_HOME` で変更可）を読みます。資格情報がないときは、その CLI の `/login` で一度ログインしてください。
+- GLM 使用量パネルに、このアプリ内でのログインもスナップショットの取り込みも不要です。ZCode CLI がすでに保存した資格情報（`~/.zcode/v2/credentials.json`）を読みます。期限切れのときは `zcode login` を実行し直してください。
+- OpenCode 使用量パネルに、このアプリ内でのログインもスナップショットの取り込みも不要です。`~/.local/share/opencode/opencode.db` のログインを読み取り専用で読み、そのデータベースには書きません。
+- Gemini 使用量パネルに、このアプリ内でのログインもスナップショットの取り込みも不要です。Gemini CLI がすでに保存した `~/.gemini/oauth_creds.json` を読みます。有料の Code Assist サブスクリプションがないときは「サブスクリプションなし」と表示します。
 
 ## デスクトップウィジェット
 

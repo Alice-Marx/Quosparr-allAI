@@ -14,7 +14,7 @@ Quosparr 是適用於 macOS、Windows、Linux 的原生選單列 / 系統匣應�
 
 </div>
 
-> 本儲存庫是 [Alice-Marx 對 Licoy/Quosparr 的 fork](https://github.com/Alice-Marx/Quosparr)，上游為 [Licoy/Quosparr](https://github.com/Licoy/Quosparr)，遵循 GNU Affero General Public License v3.0（[LICENSE](LICENSE)）。Alice 增加的是獨立的 **Grok Bot 助手**每週額度面板，以及獨立的 **Cursor 額度**面板。兩者都**沒有公開的第三方計費 API**。每個面板只讀取自己的本機 JSON 快照，不抓取 Cookie、Grok Bot 設定頁或 Cursor 儀表板 HTML，本 fork 也不附帶寫入這些快照的例程。
+> 本儲存庫是 [Alice-Marx 對 Licoy/Quosparr 的 fork](https://github.com/Alice-Marx/Quosparr)，上游為 [Licoy/Quosparr](https://github.com/Licoy/Quosparr)，遵循 GNU Affero General Public License v3.0（[LICENSE](LICENSE)）。Alice 增加的是獨立的 **Grok Bot 助手**每週額度面板、獨立的 **Cursor 額度**面板，以及 **Kimi Code 額度**、**GLM 額度**、**OpenCode 額度**、**Gemini 額度**四個直連面板。前兩者**沒有公開的第三方計費 API**，各自只讀自己的本機 JSON 快照，不抓取 Cookie、Grok Bot 設定頁或 Cursor 儀表板 HTML，本 fork 也不附帶寫入這些快照的例程。後四者不同：它們讀取本機 CLI 已有的登入憑據，直接請求廠商官方額度介面，不顯示憑據內容；憑據缺失、憑據過期、無訂閱與介面失敗各有獨立提示，並統計本機會話日誌的 token 給出 API 等價成本，取得不出口徑或價目時顯示「缺價格」，不憑空估算。
 
 ## 亮點
 
@@ -58,6 +58,34 @@ Quosparr 是適用於 macOS、Windows、Linux 的原生選單列 / 系統匣應�
 - 顯示包含額度的已用百分比、重設時間、隨需狀態，以及可選的隨需美元金額。快照帶有 `includedPools` 時，主進度分別畫出 Cursor 模型與其他模型兩條。沒有該物件而帶有拆分時，顯示占比最高的產品。可選的 `grokBotWeeklyRef` 只指向 Grok Bot 助手面板，不複製每週數字。可選的 `periodStart` 與 `history` 用於速率和用量推算。
 - 重新整理會監視快照檔案的修改時間，標題列重新整理也只重讀該檔案。沒有快照時，空白狀態會說明匯入路徑，並註明沒有官方介面。
 - **匯入 JSON** 會在驗證後把所選檔案寫入快照路徑。未知欄位（含 token）會被捨棄。本儲存庫沒有內建寫入程式。可複製 [`examples/cursor-usage.json`](examples/cursor-usage.json)，或自行取代該檔案。之後的例程應在同一目錄寫入暫存檔，再改名取代。
+
+**Kimi Code 額度**
+
+- 面板標籤為 **Kimi Code**，標題為「額度」。它讀取本機 Kimi Code CLI 已登入的憑據目錄 `~/.kimi-code/credentials/`（`KIMI_CODE_HOME` 可覆蓋），直接請求 `https://api.kimi.com/coding/v1/usages`；國際站為 `https://api.kimi.ai/coding/v1`，`KIMI_CODE_BASE_URL` 可覆蓋。不抓取 Cookie，也不是手工快照。
+- 顯示 5 小時、7 天、月度總額與月度程式碼四檔用量及各自的重設時間，以及額外錢包餘額。
+- 存取權杖在到期前自動重新整理，並原子寫回憑據檔案，保留其中的未知欄位；憑據檔案的內容從不顯示。
+- 憑據被拒絕時提示用 Kimi Code CLI 的 `/login` 重新登入，與「沒有憑據」「介面失敗」分開提示。
+
+**GLM 額度**
+
+- 面板標籤為 **GLM**，標題為「Coding Plan 額度」。憑據取自 ZCode CLI 的 `~/.zcode/v2/credentials.json`，直接請求 `https://bigmodel.cn/api/monitor/usage/quota/limit`；國際站 `api.z.ai` 使用同一路徑。
+- 鑑權標頭放裸權杖，不加 `Bearer` 前綴；加了前綴會被當成失效憑據拒絕。
+- 該介面沒有重新整理端點，憑據過期只能重新執行 `zcode login`，面板不替你續期。
+- 顯示 Coding Plan 的額度用量與重設時間，額度欄位沿用 ZCode CLI 自身的欄位定義；沒有憑據、憑據過期與介面失敗分別提示。
+
+**OpenCode 額度**
+
+- 面板標籤為 **OpenCode**。它以唯讀方式開啟 `~/.local/share/opencode/opencode.db` 取登入憑據，請求 `https://opencode.ai/zen/go/v1/usage`（滾動、週、月三段用量）與 `https://opencode.ai/console/api/policies/current-budgets`（組織預算）。
+- 不重新整理憑據、不寫資料庫：CLI 可能正開啟該檔案，因此只讀。
+- 工作階段成本直接用 OpenCode CLI 自己落盤的金額，不按價目重算。
+- 憑據缺失、憑據過期、組織未開啟該功能與介面失敗分別提示。
+
+**Gemini 額度**
+
+- 面板標籤為 **Gemini**，標題為「Code Assist 額度」。它讀取 `~/.gemini/oauth_creds.json`，請求 `https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota`，按模型顯示剩餘請求數與重設時間。
+- 憑據過期時按官方重新整理流程嘗試續期；缺少重新整理所需的 OAuth 客戶端設定或重新整理被拒絕時，提示用 Gemini CLI 重新寫入憑據檔案，並按憑據過期而不是讀取錯誤處理。
+- 沒有付費 Code Assist 訂閱時顯示「無訂閱」這一獨立狀態，不當作錯誤。
+- 沒有憑據與介面失敗分別提示。
 
 **三個供應商通用**
 
@@ -140,6 +168,10 @@ Linux 需要 GTK3、AppIndicator、支援系統匣的桌面環境，以及可用
 - Grok 帳號與額度僅支援 OAuth / SuperGrok 及相容的 legacy session。可執行 `grok login --oauth`、在應用程式內登入、匯入目前登入，或貼上憑證 JSON。僅使用 API Key 的登入不會加入託管帳號。若已設定 `GROK_HOME` 則使用該目錄，否則使用 `~/.grok`。
 - Grok Bot 助手面板不需要 Grok CLI。它只讀取 `~/.quosparr/grokbot-usage.json`（Windows 為 `%USERPROFILE%\.quosparr\grokbot-usage.json`）。把 [`examples/grokbot-usage.json`](examples/grokbot-usage.json) 複製到該路徑，或在該面板使用 **匯入 JSON**。
 - Cursor 額度面板不需要 Grok CLI，也不在本應用程式裡登入 Cursor。它只讀取 `~/.quosparr/cursor-usage.json`（Windows 為 `%USERPROFILE%\.quosparr\cursor-usage.json`）。把 [`examples/cursor-usage.json`](examples/cursor-usage.json) 複製到該路徑，或在該面板使用 **匯入 JSON**。只含必填欄位的檔案是 [`examples/cursor-usage.min.json`](examples/cursor-usage.min.json)。
+- Kimi Code 額度面板不需要在本應用程式裡登入 Kimi Code，也不需要匯入快照。它讀取 Kimi Code CLI 已登入的憑據（`~/.kimi-code/credentials/`，`KIMI_CODE_HOME` 可覆蓋）；沒有憑據時用該 CLI 的 `/login` 登入一次即可。
+- GLM 額度面板不需要在本應用程式裡登入，也不需要匯入快照。它讀取 ZCode CLI 已登入的憑據（`~/.zcode/v2/credentials.json`）；憑據過期時重新執行 `zcode login`。
+- OpenCode 額度面板不需要在本應用程式裡登入，也不需要匯入快照。它以唯讀方式讀取 `~/.local/share/opencode/opencode.db` 中的登入憑據，不寫回該資料庫。
+- Gemini 額度面板不需要在本應用程式裡登入，也不需要匯入快照。它讀取 Gemini CLI 已登入的 `~/.gemini/oauth_creds.json`；沒有付費 Code Assist 訂閱時顯示「無訂閱」。
 
 ## 桌面小工具
 

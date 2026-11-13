@@ -14,7 +14,7 @@ Quosparr 是面向 macOS、Windows、Linux 的原生菜单栏 / 系统托盘应�
 
 </div>
 
-> 本仓库是 [Alice-Marx 对 Licoy/Quosparr 的 fork](https://github.com/Alice-Marx/Quosparr)，上游为 [Licoy/Quosparr](https://github.com/Licoy/Quosparr)，遵循 GNU Affero General Public License v3.0（[LICENSE](LICENSE)）。Alice 增加的是独立的 **Grok Bot 助手**每周额度面板，以及独立的 **Cursor 额度**面板。两者都**没有公开的第三方计费 API**。每个面板只读取自己的本机 JSON 快照，不抓取 Cookie、Grok Bot 设置页或 Cursor 仪表盘 HTML，本 fork 也不附带写入这些快照的例程。
+> 本仓库是 [Alice-Marx 对 Licoy/Quosparr 的 fork](https://github.com/Alice-Marx/Quosparr)，上游为 [Licoy/Quosparr](https://github.com/Licoy/Quosparr)，遵循 GNU Affero General Public License v3.0（[LICENSE](LICENSE)）。Alice 增加的是独立的 **Grok Bot 助手**每周额度面板、独立的 **Cursor 额度**面板，以及 **Kimi Code 额度**、**GLM 额度**、**OpenCode 额度**、**Gemini 额度**四个直连面板。前两者**没有公开的第三方计费 API**，各自只读自己的本机 JSON 快照，不抓取 Cookie、Grok Bot 设置页或 Cursor 仪表盘 HTML，本 fork 也不附带写入这些快照的例程。后四者不同：它们读取本机 CLI 已有的登录凭据，直接请求厂商官方额度接口，不显示凭据内容；凭据缺失、凭据过期、无订阅与接口失败各有独立提示，并统计本地会话日志的 token 给出 API 等价成本，拿到不出口径或价目时显示「缺价格」，不凭空估算。
 
 ## 亮点
 
@@ -58,6 +58,34 @@ Quosparr 是面向 macOS、Windows、Linux 的原生菜单栏 / 系统托盘应�
 - 显示包含额度的已用百分比、重置时间、按需状态，以及可选的按需美元金额。快照带有 `includedPools` 时，主进度分别画出 Cursor 模型与其他模型两条。没有该对象而带有拆分时，显示占比最高的产品。可选的 `grokBotWeeklyRef` 只指向 Grok Bot 助手面板，不复制每周数字。可选的 `periodStart` 与 `history` 用于速率和用量推算。
 - 刷新会监视快照文件的修改时间，标题栏刷新也只重读该文件。没有快照时，空状态会说明导入路径，并注明没有官方接口。
 - **导入 JSON** 会在校验后把所选文件写入快照路径。未知字段（含 token）会被丢弃。本仓库没有内置写入程序。可复制 [`examples/cursor-usage.json`](examples/cursor-usage.json)，或自行替换该文件。以后的例程应在同一目录写入临时文件，再改名替换。
+
+**Kimi Code 额度**
+
+- 面板标签为 **Kimi Code**，标题为「额度」。它读取本机 Kimi Code CLI 已登录的凭据目录 `~/.kimi-code/credentials/`（`KIMI_CODE_HOME` 可覆盖），直接请求 `https://api.kimi.com/coding/v1/usages`；国际站为 `https://api.kimi.ai/coding/v1`，`KIMI_CODE_BASE_URL` 可覆盖。不抓取 Cookie，也不是手工快照。
+- 显示 5 小时、7 天、月度总额与月度代码四档用量及各自的重置时间，以及额外钱包余额。
+- 访问令牌在到期前自动刷新，并原子写回凭据文件，保留其中的未知字段；凭据文件的内容从不显示。
+- 凭据被拒绝时提示用 Kimi Code CLI 的 `/login` 重新登录，与「没有凭据」「接口失败」分开提示。
+
+**GLM 额度**
+
+- 面板标签为 **GLM**，标题为「Coding Plan 额度」。凭据取自 ZCode CLI 的 `~/.zcode/v2/credentials.json`，直接请求 `https://bigmodel.cn/api/monitor/usage/quota/limit`；国际站 `api.z.ai` 使用同一路径。
+- 鉴权头放裸令牌，不加 `Bearer` 前缀；加了前缀会被当作失效凭据拒绝。
+- 该接口没有刷新端点，凭据过期只能重新执行 `zcode login`，面板不替你续期。
+- 显示 Coding Plan 的额度用量与重置时间，额度字段沿用 ZCode CLI 自身的字段定义；没有凭据、凭据过期与接口失败分别提示。
+
+**OpenCode 额度**
+
+- 面板标签为 **OpenCode**。它以只读方式打开 `~/.local/share/opencode/opencode.db` 取登录凭据，请求 `https://opencode.ai/zen/go/v1/usage`（滚动、周、月三段用量）与 `https://opencode.ai/console/api/policies/current-budgets`（组织预算）。
+- 不刷新凭据、不写数据库：CLI 可能正打开该文件，因此只读。
+- 会话成本直接用 OpenCode CLI 自己落盘的金额，不按价目重算。
+- 凭据缺失、凭据过期、组织未开启该功能与接口失败分别提示。
+
+**Gemini 额度**
+
+- 面板标签为 **Gemini**，标题为「Code Assist 额度」。它读取 `~/.gemini/oauth_creds.json`，请求 `https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota`，按模型显示剩余请求数与重置时间。
+- 凭据过期时按官方刷新流程尝试续期；缺少刷新所需的 OAuth 客户端配置或刷新被拒绝时，提示用 Gemini CLI 重新写入凭据文件，并按凭据过期而不是读取错误处理。
+- 没有付费 Code Assist 订阅时显示「无订阅」这一独立状态，不当作错误。
+- 没有凭据与接口失败分别提示。
 
 **三个供应商通用**
 
@@ -140,6 +168,10 @@ Linux 需要 GTK3、AppIndicator、支持托盘的桌面，以及可用的 Secre
 - Grok 账号与额度仅支持 OAuth / SuperGrok 及兼容的 legacy session。可执行 `grok login --oauth`、在应用内登录、导入当前登录或粘贴凭据 JSON；仅 API Key 的登录不会加入托管账号。设置了 `GROK_HOME` 时使用该目录，否则使用 `~/.grok`
 - Grok Bot 助手面板不需要 Grok CLI。它只读取 `~/.quosparr/grokbot-usage.json`（Windows 为 `%USERPROFILE%\.quosparr\grokbot-usage.json`）。把 [`examples/grokbot-usage.json`](examples/grokbot-usage.json) 复制到该路径，或在该面板使用 **导入 JSON**。
 - Cursor 额度面板不需要 Grok CLI，也不在本应用里登录 Cursor。它只读取 `~/.quosparr/cursor-usage.json`（Windows 为 `%USERPROFILE%\.quosparr\cursor-usage.json`）。把 [`examples/cursor-usage.json`](examples/cursor-usage.json) 复制到该路径，或在该面板使用 **导入 JSON**。只含必填字段的文件是 [`examples/cursor-usage.min.json`](examples/cursor-usage.min.json)。
+- Kimi Code 额度面板不需要在本应用里登录 Kimi Code，也不需要导入快照。它读取 Kimi Code CLI 已登录的凭据（`~/.kimi-code/credentials/`，`KIMI_CODE_HOME` 可覆盖）；没有凭据时用该 CLI 的 `/login` 登录一次即可。
+- GLM 额度面板不需要在本应用里登录，也不需要导入快照。它读取 ZCode CLI 已登录的凭据（`~/.zcode/v2/credentials.json`）；凭据过期时重新执行 `zcode login`。
+- OpenCode 额度面板不需要在本应用里登录，也不需要导入快照。它以只读方式读取 `~/.local/share/opencode/opencode.db` 中的登录凭据，不写回该数据库。
+- Gemini 额度面板不需要在本应用里登录，也不需要导入快照。它读取 Gemini CLI 已登录的 `~/.gemini/oauth_creds.json`；没有付费 Code Assist 订阅时显示「无订阅」。
 
 ## 桌面组件
 
