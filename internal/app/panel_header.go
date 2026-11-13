@@ -38,6 +38,11 @@ func panelHeader(c *ui.Context, a *App, l l10n.Localizer, prefs store.Preference
 			cursorIdentityRow(c, l, a)
 			return
 		}
+		if prefs.SelectedProvider.SnapshotTab() {
+			// The remaining quota tabs name a different product each, so they
+			// draw their own identity row inside the page body.
+			return
+		}
 		if grokView {
 			grokIdentityRow(c, a, l, prefs, snap)
 			return
@@ -68,7 +73,7 @@ func panelBusy(snap runway.Snapshot, grokView bool) bool {
 // Cursor product usage. The two labels never swap.
 func panelTabs(providers []store.Provider) []store.Provider {
 	out := slices.Clone(providers)
-	for _, extra := range []store.Provider{store.ProviderGrokBot, store.ProviderCursor} {
+	for _, extra := range store.SnapshotProviders() {
 		if !slices.Contains(out, extra) {
 			out = append(out, extra)
 		}
@@ -133,6 +138,12 @@ func providerMeters(snap runway.Snapshot, p store.Provider) []runway.Meter {
 		return snap.Grok.Meters
 	case store.ProviderClaude:
 		return snap.Claude.Meters
+	case store.ProviderGrokBot, store.ProviderCursor, store.ProviderKimi,
+		store.ProviderGLM, store.ProviderOpenCode, store.ProviderGemini:
+		// The quota tabs read their own credential on their own schedule, so
+		// the snapshot carries no meter for them. Their strip bar stays empty
+		// rather than showing another provider's quota.
+		return nil
 	default:
 		return snap.Codex.Meters
 	}
@@ -195,12 +206,7 @@ func panelHeaderButtons(c *ui.Context, a *App, l l10n.Localizer, prefs store.Pre
 // refreshEverything is the header refresh: all sections, plus the open
 // cost query or reaction when a page that shows them is open.
 func refreshEverything(a *App, acts PanelActions) {
-	if a.settings != nil && a.settings.Prefs().SelectedProvider == store.ProviderGrokBot {
-		a.refreshGrokBot()
-		return
-	}
-	if a.settings != nil && a.settings.Prefs().SelectedProvider == store.ProviderCursor {
-		a.refreshCursor()
+	if a.settings != nil && a.refreshSnapshotTab(a.settings.Prefs().SelectedProvider) {
 		return
 	}
 	acts.Refresh()

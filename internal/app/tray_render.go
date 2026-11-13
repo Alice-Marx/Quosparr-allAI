@@ -504,6 +504,14 @@ func trayProviderIcon(p store.Provider) *ui.SVG {
 		return icChat
 	case store.ProviderCursor:
 		return icGauge
+	case store.ProviderKimi:
+		return icTerminal
+	case store.ProviderGLM:
+		return icCpu
+	case store.ProviderOpenCode:
+		return icFunction
+	case store.ProviderGemini:
+		return icGlobe
 	}
 	return nil
 }

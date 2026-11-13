@@ -284,9 +284,9 @@ func (p *Preferences) normalizePanelProviders() {
 		p.PanelProviders = nil
 		return
 	}
-	// Grok Bot and Cursor are always offered beside the CLI tabs, so a custom
-	// CLI list does not move the selection off either snapshot tab.
-	if p.SelectedProvider == ProviderGrokBot || p.SelectedProvider == ProviderCursor || slices.Contains(p.PanelProviders, p.SelectedProvider) {
+	// The panel-only quota tabs are always offered beside the CLI tabs, so a
+	// custom CLI list does not move the selection off any of them.
+	if slices.Contains(SnapshotProviders(), p.SelectedProvider) || slices.Contains(p.PanelProviders, p.SelectedProvider) {
 		return
 	}
 	p.SelectedProvider = p.PanelProviders[0]

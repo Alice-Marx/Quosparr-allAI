@@ -19,6 +19,18 @@ const (
 	// ProviderCursor is the Cursor product usage tab. It is not a CLI
 	// provider and it is not the Grok Bot assistant snapshot.
 	ProviderCursor Provider = "cursor"
+	// ProviderKimi is the Kimi Code quota tab. Read from the Kimi Code
+	// credential and its managed usage endpoint, never from a snapshot file.
+	ProviderKimi Provider = "kimi"
+	// ProviderGLM is the GLM coding plan quota tab. Its credential is the
+	// ZCode login, and its usage endpoint takes the token without a scheme.
+	ProviderGLM Provider = "glm"
+	// ProviderOpenCode is the OpenCode Zen quota tab, plus the console
+	// budgets the same login can read.
+	ProviderOpenCode Provider = "opencode"
+	// ProviderGemini is the Gemini Code Assist quota tab. A free tier that
+	// cannot reach the quota endpoint shows its own state, not an error.
+	ProviderGemini Provider = "gemini"
 )
 
 // Providers returns every CLI provider, in display order.
@@ -27,11 +39,25 @@ func Providers() []Provider { return []Provider{ProviderCodex, ProviderClaude, P
 // Valid reports whether v is a CLI provider stored in provider lists.
 func (v Provider) Valid() bool { return slices.Contains(Providers(), v) }
 
-// PanelSelectable reports whether the main panel can show v. Grok Bot and
-// Cursor are included; neither is a member of Providers.
-func (v Provider) PanelSelectable() bool {
-	return v.Valid() || v == ProviderGrokBot || v == ProviderCursor
+// SnapshotProviders returns the panel-only quota tabs. Each one is a quota
+// reading with its own credential, not a CLI provider: Providers, account
+// lists, MCP, skills and sessions ignore all of them.
+func SnapshotProviders() []Provider {
+	return []Provider{
+		ProviderGrokBot, ProviderCursor,
+		ProviderKimi, ProviderGLM, ProviderOpenCode, ProviderGemini,
+	}
 }
+
+// PanelSelectable reports whether the main panel can show v. Every CLI
+// provider and every panel-only quota tab is included.
+func (v Provider) PanelSelectable() bool {
+	return v.Valid() || v.SnapshotTab()
+}
+
+// SnapshotTab reports whether v is a panel-only quota tab: a quota reading
+// with its own credential rather than a CLI provider.
+func (v Provider) SnapshotTab() bool { return slices.Contains(SnapshotProviders(), v) }
 
 // Language is the user's language preference.
 type Language string

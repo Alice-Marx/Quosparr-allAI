@@ -51,16 +51,7 @@ func (rt *liveApp) enqueuePreferences(p store.Preferences) {
 }
 
 func (rt *liveApp) requestRefresh(s *Settings, section runway.Section) {
-	if s != nil && s.Prefs().SelectedProvider == store.ProviderGrokBot {
-		if rt.host != nil {
-			rt.host.refreshGrokBot()
-		}
-		return
-	}
-	if s != nil && s.Prefs().SelectedProvider == store.ProviderCursor {
-		if rt.host != nil {
-			rt.host.refreshCursor()
-		}
+	if s != nil && rt.host != nil && rt.host.refreshSnapshotTab(s.Prefs().SelectedProvider) {
 		return
 	}
 	var p *store.Preferences

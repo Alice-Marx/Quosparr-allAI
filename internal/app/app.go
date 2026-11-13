@@ -92,6 +92,10 @@ type App struct {
 	panelActs PanelActions
 	grokBot   grokBotHold
 	cursor    cursorHold
+	kimi      kimiHold
+	glm       glmHold
+	opencode  openCodeHold
+	gemini    geminiHold
 
 	backgroundReady bool
 	stopBackground  func()

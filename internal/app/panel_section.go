@@ -29,6 +29,18 @@ func panelBody(c *ui.Context, a *App, l l10n.Localizer, prefs store.Preferences,
 	case store.ProviderCursor:
 		panelCursor(c, a, l, prefs, state)
 		return
+	case store.ProviderKimi:
+		panelKimi(c, a, l, prefs, state)
+		return
+	case store.ProviderGLM:
+		panelGLM(c, a, l, prefs, state)
+		return
+	case store.ProviderOpenCode:
+		panelOpenCode(c, a, l, prefs, state)
+		return
+	case store.ProviderGemini:
+		panelGemini(c, a, l, prefs, state)
+		return
 	}
 	snap.Provider = prefs.SelectedProvider
 	snap.Codex = providerView(l, snap, prefs.APICostSummaryRange)

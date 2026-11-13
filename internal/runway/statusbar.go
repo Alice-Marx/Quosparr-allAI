@@ -118,7 +118,8 @@ func statusTextFor(lc l10n.Localizer, in StatusInputs, p store.Provider) string 
 		return GrokStatusText(lc, in.Grok, in.Now)
 	case store.ProviderClaude:
 		return ClaudeStatusText(lc, in.Claude, in.Now)
-	case store.ProviderGrokBot, store.ProviderCursor:
+	case store.ProviderGrokBot, store.ProviderCursor, store.ProviderKimi,
+		store.ProviderGLM, store.ProviderOpenCode, store.ProviderGemini:
 		return lc.Text(l10n.KeyStatusUnknown)
 	default:
 		return in.CodexText
@@ -162,6 +163,8 @@ func metersOf(in StatusInputs, p store.Provider) []Meter {
 		return in.GrokBotMeters
 	case store.ProviderCursor:
 		return in.CursorMeters
+	case store.ProviderKimi, store.ProviderGLM, store.ProviderOpenCode, store.ProviderGemini:
+		return nil
 	default:
 		return in.CodexMeters
 	}

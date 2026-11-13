@@ -14,6 +14,14 @@ func providerLabel(l l10n.Localizer, v store.Provider) string {
 		return tx(l, xGrokBotTab)
 	case store.ProviderCursor:
 		return tx(l, xCursorTab)
+	case store.ProviderKimi:
+		return tx(l, xKimiTab)
+	case store.ProviderGLM:
+		return tx(l, xGLMTab)
+	case store.ProviderOpenCode:
+		return tx(l, xOpenCodeTab)
+	case store.ProviderGemini:
+		return tx(l, xGeminiTab)
 	}
 	return l.Text(providerKey(v))
 }

@@ -65,6 +65,10 @@ func StartBackground(ctx context.Context, opts BackgroundOptions) func() {
 	if opts.Host != nil && opts.Home != "" {
 		go opts.Host.watchGrokBot(ctx, opts.Home)
 		go opts.Host.watchCursor(ctx, opts.Home)
+		go opts.Host.watchKimi(ctx, opts.Home)
+		go opts.Host.watchGLM(ctx, opts.Home)
+		go opts.Host.watchOpenCode(ctx, opts.Home)
+		go opts.Host.watchGemini(ctx, opts.Home)
 	}
 	return func() {
 		if unsubscribe != nil {

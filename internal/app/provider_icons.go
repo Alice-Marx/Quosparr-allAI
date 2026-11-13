@@ -46,6 +46,14 @@ func ProviderIcon(c *ui.Context, provider store.Provider, size float32) ui.Eleme
 		return ui.Icon(c, icChat).Size(size, size)
 	case store.ProviderCursor:
 		return ui.Icon(c, icGauge).Size(size, size)
+	case store.ProviderKimi:
+		return ui.Icon(c, icTerminal).Size(size, size)
+	case store.ProviderGLM:
+		return ui.Icon(c, icCpu).Size(size, size)
+	case store.ProviderOpenCode:
+		return ui.Icon(c, icFunction).Size(size, size)
+	case store.ProviderGemini:
+		return ui.Icon(c, icGlobe).Size(size, size)
 	default:
 		return ui.Icon(c, icPlug).Size(size, size).TextColor(c.Theme().TextMuted)
 	}
